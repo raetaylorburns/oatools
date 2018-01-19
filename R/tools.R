@@ -2,12 +2,11 @@
 #'
 #' @param x first number
 #' @param y second number
-#' @param z third number
 #'
 #' @return the result of addition
 #' @export
 #'
 #' @examples
-add <- function(x, y, z=0){
+add <- function(x, y=0){
   x + y + z
 }
