@@ -2,20 +2,15 @@
 #CREATE VARIABILITY LAYER#
 ##########################################################
 
-install.packages("sdmpredictors")
-# install package developed by Bio-ORACLE creators to manipulate layers
-
-# Load package 
-library(sdmpredictors)
+# Load packages ----
+library(sdmpredictors) # install.packages("sdmpredictors")
 
 ######### Package and Layers exploration
 
-#?sdmpredictors
-
 # Explore datasets in the package
-list_datasets() 
+list_datasets()
 
-# Explore layers in a dataset 
+# Explore layers in a dataset
 list_layers()
 
 # Explore names of layers in dataset
@@ -29,22 +24,24 @@ list_layers("Bio-ORACLE")
 
 ######### Layer manipulation
 
-### SEA SURFACE TEMPERATURE
+# SEA SURFACE TEMPERATURE ----
 
-SST <- load_layers("BO_sstmean", equalarea = TRUE)
 # load mean SST layer w/o projection
+SST <- load_layers("BO_sstmean", equalarea = FALSE)
 
-crs(SST) <- CRS('+init=EPSG:6414') # assign coordinate reference system to CA Albers NAD 83 EPSG 6414
+# project to CA Albers NAD 83 EPSG 6414, 10 kilometers
+# NOTE: should setup a single raster to snap all other rasters to and feed into "to" argument projectRaster(from, to)
+SST <- projectRaster(SST, crs=CRS('+init=EPSG:6414'), res=10000, method="ngb")
 
 # Crop raster to fit the Eastern Pacific
 NEpacific <- extent(-12500000, -11250000, 3500000, 6000000) # names the extent - this is just an estimate ***need to coordinate extent with Rae based on Gap analysis feedback!
 
 SSTcrop <- crop(SST, NEpacific) # crops SST layer according to NEpacific extent
 
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(SSTcrop,col=my.colors(1000),axes=FALSE, box=FALSE) 
-title(cex.sub = 1.25, sub = "SST (ºC)")
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(SSTcrop,col=my.colors(1000),axes=FALSE, box=FALSE)
+title(cex.sub = 1.25, sub = "SST (?C)")
 
 
 ### SST variability
@@ -52,16 +49,16 @@ title(cex.sub = 1.25, sub = "SST (ºC)")
 sstvar=terrain(SSTcrop, opt='slope')
 #get slope of SST
 
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(sstvar,col=my.colors(1000),axes=FALSE, box=FALSE) 
-title(cex.sub = 1.25, sub = "SST variability(ºC)")
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(sstvar,col=my.colors(1000),axes=FALSE, box=FALSE)
+title(cex.sub = 1.25, sub = "SST variability(?C)")
 
 ################################################################
 
 ## DISSOLVED OXYGEN
 
-DO <- load_layers("BO_dissox", equalarea = TRUE) 
+DO <- load_layers("BO_dissox", equalarea = TRUE)
 # Load Dissolved Oxygen Data W/O projection
 
 crs(DO) <- CRS('+init=EPSG:6414') # assign coordinate reference system to CA Albers NAD 83 EPSG 6414
@@ -71,20 +68,20 @@ NEpacific <- extent(-12500000, -11250000, 3500000, 6000000) # names the extent -
 
 DOcrop <- crop(DO, NEpacific) # crops SST layer according to NEpacific extent
 
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(DOcrop,col=my.colors(1000),axes=FALSE, box=FALSE) 
-title(cex.sub = 1.25, sub = "DO (ºC)")
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(DOcrop,col=my.colors(1000),axes=FALSE, box=FALSE)
+title(cex.sub = 1.25, sub = "DO (?C)")
 
 ### DO variability
 
 dovar=terrain(DOcrop, opt='slope')
 #get slope of DO
 
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(dovar,col=my.colors(1000),axes=FALSE, box=FALSE) 
-title(cex.sub = 1.25, sub = "SST variability(ºC)")
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(dovar,col=my.colors(1000),axes=FALSE, box=FALSE)
+title(cex.sub = 1.25, sub = "SST variability(?C)")
 
 ###############################################################
 
@@ -96,9 +93,9 @@ sstnorm = sstvar/maxValue(sstvar)
 
 variability = donorm+sstnorm
 
-# Generate a nice color ramp and plot the map 
-my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127")) 
-plot(variability,col=my.colors(1000),axes=FALSE, box=FALSE) 
+# Generate a nice color ramp and plot the map
+my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
+plot(variability,col=my.colors(1000),axes=FALSE, box=FALSE)
 title(cex.sub = 1.25, sub = "normalized variability")
 
 ###############################################################
@@ -127,9 +124,9 @@ voronoi <- voronoi.polygons(voronoicoords)
 voronoicrop <- crop(voronoi, SSTcrop)
 
 #plot voronoi shapes! success.
-plot(voronoi) 
+plot(voronoi)
 
-#attempt to assign values to voronoi polygons based on relative size. this did not work. 
+#attempt to assign values to voronoi polygons based on relative size. this did not work.
 
 install.packages("deldir")
 library(deldir)
@@ -149,7 +146,7 @@ plot(voronoi, col=my.colors(1000),axes=FALSE, box=FALSE)
 
 
 
-#PLEASE IGNORE THE FOLLOWING CODE.... LOTS OF FAILED ATTEMPTS AND APPROACHES. 
+#PLEASE IGNORE THE FOLLOWING CODE.... LOTS OF FAILED ATTEMPTS AND APPROACHES.
 #############################################################################
 #vor_pts<-SpatialPointsDataFrame(deduped.coords, deduped.coords, match.ID = TRUE)
 
@@ -163,7 +160,7 @@ plot(voronoi, col=my.colors(1000),axes=FALSE, box=FALSE)
 #  sp_dat <- sp@data
 #  rownames(sp_dat) <-
 #sapply(slot(SpatialPolygons(vor_polygons), 'polygons'), slot, 'ID')
-  
+
 #SpatialPolygonsDataFrame(SpatialPolygons(vor_polygons), data=sp_dat)
 #}
 
