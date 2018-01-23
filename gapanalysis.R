@@ -4,6 +4,8 @@
 
 # Load packages ----
 library(sdmpredictors) # install.packages("sdmpredictors")
+library(tidyverse)
+library(here)
 
 ######### Package and Layers exploration
 
@@ -26,8 +28,12 @@ list_layers("Bio-ORACLE")
 
 # SEA SURFACE TEMPERATURE ----
 
+# setup datadir for sdmpredictors
+dir_sdmdata <- here("data/sdmpredictors")
+if (!dir.exists(dir_sdmdata)) dir.create(dir_sdmdata, recursive = T)
+
 # load mean SST layer w/o projection
-SST <- load_layers("BO_sstmean", equalarea = FALSE)
+SST <- load_layers("BO_sstmean", equalarea = F, datadir=dir_sdmdata)
 
 # project to CA Albers NAD 83 EPSG 6414, 10 kilometers
 # NOTE: should setup a single raster to snap all other rasters to and feed into "to" argument projectRaster(from, to)
@@ -58,15 +64,14 @@ title(cex.sub = 1.25, sub = "SST variability(?C)")
 
 ## DISSOLVED OXYGEN
 
-DO <- load_layers("BO_dissox", equalarea = TRUE)
+DO <- load_layers("BO_dissox", equalarea = F, datadir=dir_sdmdata)
 # Load Dissolved Oxygen Data W/O projection
 
-crs(DO) <- CRS('+init=EPSG:6414') # assign coordinate reference system to CA Albers NAD 83 EPSG 6414
+# project to CA Albers NAD 83 EPSG 6414, 10 kilometers
+# NOTE: should setup a single raster to snap all other rasters to and feed into "to" argument projectRaster(from, to)
+DO <- projectRaster(DO, crs=CRS('+init=EPSG:6414'), res=10000, method="ngb")
 
-# Crop raster to fit the Eastern Pacific
-NEpacific <- extent(-12500000, -11250000, 3500000, 6000000) # names the extent - this is just an estimate ***need to coordinate extent with Rae based on Gap analysis feedback!
-
-DOcrop <- crop(DO, NEpacific) # crops SST layer according to NEpacific extent
+DOcrop <- crop(DO, NEpacific) # crops DO layer according to NEpacific extent
 
 # Generate a nice color ramp and plot the map
 my.colors = colorRampPalette(c("#5E85B8","#EDF0C0","#C13127"))
@@ -103,6 +108,7 @@ title(cex.sub = 1.25, sub = "normalized variability")
 ###############################################################
 
 #import inventory
+oahfocus <- read_csv(here("oahfocus.csv"))
 
 #isolate coordinate columns
 coords<-cbind.data.frame(oahfocus$Longitude, oahfocus$Latitude)
@@ -111,11 +117,12 @@ coords<-cbind.data.frame(oahfocus$Longitude, oahfocus$Latitude)
 deduped.coords<-unique(coords)
 
 #voronoi polygons
-install.packages("SDraw")
-library(SDraw)
+library(SDraw) # install.packages("SDraw")
 
 #create spatial points objects
-voronoicoords<-SpatialPoints(deduped.coords, CRS('+init=EPSG:6414'))
+voronoicoords <- SpatialPoints(deduped.coords, CRS("+proj=longlat +ellps=WGS84"))
+voronoicoords <- spTransform(voronoicoords, CRS('+init=EPSG:6414'))
+
 
 #create voronoi polygons
 voronoi <- voronoi.polygons(voronoicoords)
@@ -128,8 +135,7 @@ plot(voronoi)
 
 #attempt to assign values to voronoi polygons based on relative size. this did not work.
 
-install.packages("deldir")
-library(deldir)
+library(deldir) # install.packages("deldir")
 
 #get the relative sizes of each polygon.
 polygons <- deldir(oahfocus$Longitude, oahfocus$Latitude)
@@ -142,7 +148,16 @@ plot(vorfinal, col=size)
 # i think the colors for the polygons here are randomly assigned...?
 plot(voronoi, col=my.colors(1000),axes=FALSE, box=FALSE)
 
+spplot(voronoi, zcol="area")
 
+# I prefer sf package for vector data
+library(sf) # install.packages(sf)
+voronoi_sf <- st_as_sf(voronoi)
+plot(voronoi_sf["area"])
+
+# here's a quick way to view with basemap
+library(mapview) # install.packages(mapview)
+mapview(voronoi_sf, zcol="area")
 
 
 
