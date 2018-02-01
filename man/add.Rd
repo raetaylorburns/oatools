@@ -4,14 +4,12 @@
 \alias{add}
 \title{Add two numbers}
 \usage{
-add(x, y, z = 0)
+add(x, y = 0)
 }
 \arguments{
 \item{x}{first number}
 
 \item{y}{second number}
-
-\item{z}{third number}
 }
 \value{
 the result of addition
